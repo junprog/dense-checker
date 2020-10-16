@@ -15,7 +15,7 @@ class denseChecker(object):
         self.use_camera = use_camera
 
         if self.use_camera == False:
-            assert media_path is not None, "If use an existing movie, you specify the movie's path"
+            assert media_path is not None, "If use an existing movie, you specify the movie's path : modea_path"
             self.media_path = media_path
         
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
