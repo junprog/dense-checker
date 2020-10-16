@@ -9,65 +9,101 @@ import torch
 import torch.nn as nn
 from torchvision import models
 from torchvision import transforms
-import torchvision.transforms.functional as F
 
-def capture_camera(trans, model, device, mirror=True):
-    # Capture video from camera
-    cap = cv2.VideoCapture(0 + cv2.CAP_DSHOW) # device num
+from calc_fps import fpsCalculator
+from models.vgg import vgg19
 
-    while True:
-        ret, frame = cap.read()
+class denseChecker(object):
+    def __init__(self, use_camera=True, media_path=None, model_path='data/ucf_best_model.pth'):
+        self.use_camera = use_camera
 
-        # flip
-        if mirror is True:
-            frame = frame[:,::-1]
+        if self.use_camera == False:
+            assert media_path is not None, "If use an existing movie, you specify the movie's path"
+            self.media_path = media_path
+        
+        self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-        # BGR -> RGB
-        rgb_img = np.zeros_like(frame)
-        rgb_img[:,:,0] = frame[:,:,2]
-        rgb_img[:,:,1] = frame[:,:,1] 
-        rgb_img[:,:,2] = frame[:,:,0]
+        self.trans = transforms.Compose([transforms.ToTensor(), transforms.Normalize(mean=[0.485, 0.456, 0.406],std=[0.229, 0.224, 0.225])])
+        self.model = vgg19()
+        # load pre-trained model
+        self.model.load_state_dict(torch.load(model_path, self.device))
+        # model to GPU or CPU
+        self.model.to(self.device)
 
-        out = extracter(rgb_img, model, trans, device)
-        out = cv2.resize(out,dsize=(640, 480))
-        # plot
-        cv2.imshow('camera capture', out)
+        # fps calculator instance
+        self.fps = fpsCalculator()
 
-        k = cv2.waitKey(1) # wait 1 [msec]
-        if k == 27: # exit press : [Esc]
-            break
+    def check(self, mirror=True):
+        if self.use_camera: # Capture video from camera
+            cap = cv2.VideoCapture(0 + cv2.CAP_DSHOW)
+        else: # Capture video from an existing movie
+            cap = cv2.VideoCapture(self.media_path)
+            mirror = False
 
-    cap.release()
-    cv2.destroyAllWindows()
+        while True:
+            _, frame = cap.read()
 
-def extracter(img, model, trans, device):
-    model.to(device)
+            # flip
+            if mirror is True:
+                frame = frame[:,::-1]
 
-    model.eval()
-    with torch.no_grad():
-        img = trans(img).unsqueeze_(0)
-        img = img.to(device)
-        out = model(img)
+            if max(frame.shape) > 1300:
+                frame = cv2.resize(frame, dsize=(int(frame.shape[1]*0.5), int(frame.shape[0]*0.5)))
 
-    out = out.to('cpu').detach().numpy().copy()
-    out = np.squeeze(out)
+            # BGR(cv2) -> RGB(numpy)
+            img = self._cvimg2np(frame)
 
-    return out
+            # regress density map from image
+            out = self._regression(img)
 
-def dense_checker():
-    ##
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    trans = transforms.Compose([transforms.ToTensor(),
-                                transforms.Normalize(mean=[0.485, 0.456, 0.406],std=[0.229, 0.224, 0.225])])
+            # count
+            num = int(round(out.sum()))
+            out = cv2.resize(out, dsize=(int(out.shape[1]*8), int(out.shape[0]*8)))
 
-    model = models.resnet18(pretrained=True)
-    modules = list(model.children())[:-4]
-    model = nn.Sequential(*modules)
-    model.add_module('output_layer', nn.Conv2d(128,1,(3,3),padding=(1,1)))
+            self.fps.tick_tack()
 
-    print(model)
+            # plot
+            out = cv2.applyColorMap(self._norm_uint8(out), cv2.COLORMAP_JET)
+            cv2.putText(out, "FPS : {:.3f}   Poeple Count : {}".format(self.fps.getFPS(), num), (20, 50), cv2.FONT_HERSHEY_PLAIN, 2, (255, 255, 255), 2, cv2.LINE_AA)
 
-    capture_camera(trans, model, device)
+            cv2.imshow('camera capture', cv2.resize(frame, dsize=(int(frame.shape[1]*1), int(frame.shape[0]*1))))
+            cv2.imshow('output', out)
+
+            k = cv2.waitKey(1) # wait 1 [msec]
+            if k == 27: # exit press : [Esc]
+                break
+
+        cap.release()
+        cv2.destroyAllWindows()
+
+    def _cvimg2np(self, img):
+        out = np.zeros_like(img)
+        out[:,:,0] = img[:,:,2]
+        out[:,:,1] = img[:,:,1] 
+        out[:,:,2] = img[:,:,0]
+
+        return out
+
+    def _regression(self, img):
+        self.model.eval()
+        with torch.no_grad():
+            img = self.trans(img).unsqueeze_(0)
+            img = img.to(self.device)
+            out = self.model(img)
+
+        out = out.to('cpu').detach().numpy().copy()
+        out = np.squeeze(out)
+
+        return out
+    
+    def _norm_uint8(self, img, axis=None): 
+        Min = img.min(axis=axis, keepdims=True)
+        Max = img.max(axis=axis, keepdims=True)
+        out = (img-Min)/(Max-Min)
+        
+        return (out * 255).astype(np.uint8)
 
 if __name__ == '__main__':
-    dense_checker()
+    #checker = denseChecker(use_camera=False, media_path='data/shinjuku1.mp4')
+    checker = denseChecker()
+    checker.check()
