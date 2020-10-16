@@ -3,11 +3,8 @@ import time
 
 import cv2
 import numpy as np
-from PIL import Image
 
 import torch
-import torch.nn as nn
-from torchvision import models
 from torchvision import transforms
 
 from calc_fps import fpsCalculator
