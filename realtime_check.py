@@ -101,6 +101,6 @@ class denseChecker(object):
         return (out * 255).astype(np.uint8)
 
 if __name__ == '__main__':
-    #checker = denseChecker(use_camera=False, media_path='data/shinjuku1.mp4')
-    checker = denseChecker()
+    checker = denseChecker(use_camera=False, media_path='data/shinjuku1.mp4')
+    #checker = denseChecker()
     checker.check()
