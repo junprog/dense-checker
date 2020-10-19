@@ -11,7 +11,7 @@ This project will help to avoid the close or dense situation between people with
 
 * Progress Management : [Google Spread Sheets](https://docs.google.com/spreadsheets/d/1siRg7qTlEc6rQirJbn1OY48E0qZ5ZRyTXaP1s8RAq74/edit?usp=sharing)
 
-## Demo (curent status)
+## Demo (current status)
 
 Checking the dense situation
 ```bash
