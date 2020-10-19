@@ -13,12 +13,7 @@ This project will help to avoid the close or dense situation between people with
 
 ## Demo (curent status)
 
-Crowd Counting
+Checking the dense situation
 ```bash
 $ python realtime_check.py
-```
-
-Particle Filter
-```bash
-$ python particle_filter.py
 ```
