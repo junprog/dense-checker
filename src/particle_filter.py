@@ -11,7 +11,6 @@ class ParicleFilter(object):
         self.particles = np.empty([2, self.particles_num]) #x, y
         self.measure_noise = 20
         self.system_noise = 20
-
     
     def initialize(self, img):
         self.img_h, self.img_w, intensity = img.shape
@@ -26,7 +25,7 @@ class ParicleFilter(object):
     def normalize(self, weight):
         return weight / np.sum(weight)
 
-    def calcLikelihood4TrackingWhite(self,img):
+    def calcLikelihood4TrackingWhite(self, img):
         mean, std = 250.0, 10.0
         intensity = []
 
@@ -61,29 +60,3 @@ class ParicleFilter(object):
         self.particles[0,:] = self.particles[0,index]
          
         return np.sum(self.particles[0,:]) / float(len(self.particles[0,:])), np.sum(self.particles[1,:]) / float(len(self.particles[1,:]))
-
- 
-    def main(self):
-        cap = cv2.VideoCapture(0)
-        ret, frame = cap.read()
-        self.initialize(frame)
-
-        while True:
-            ret, frame = cap.read()
-            gray = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
-            x, y = self.filtering(gray)
-            
-            frame = cv2.circle(frame, (int(x), int(y)), 10, (0, 0, 255), -1)
-            for i in range(self.particles_num):
-                frame = cv2.circle(frame, (int(self.particles[0,i]),int(self.particles[1,i])), 2, (0, 0, 255), -1)
-            
-            cv2.imshow("frame", frame)
-        
-            if cv2.waitKey(20) & 0xFF == 27:
-                break
-        cap.release()
-        cv2.destroyAllWindows()
-
-if __name__ == '__main__':
-    filter = ParicleFilter(1000)  #particles_num
-    filter.main()
