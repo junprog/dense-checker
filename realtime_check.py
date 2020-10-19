@@ -1,13 +1,11 @@
 import os
 import time
-
+import sys
+#sys.path.remove('/opt/ros/kinetic/lib/python2.7/dist-packages')
 import cv2
 import numpy as np
-from PIL import Image
 
 import torch
-import torch.nn as nn
-from torchvision import models
 from torchvision import transforms
 
 from calc_fps import fpsCalculator
@@ -18,7 +16,7 @@ class denseChecker(object):
         self.use_camera = use_camera
 
         if self.use_camera == False:
-            assert media_path is not None, "If use an existing movie, you specify the movie's path"
+            assert media_path is not None, "If use an existing movie, you specify the movie's path : modea_path"
             self.media_path = media_path
         
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -35,7 +33,7 @@ class denseChecker(object):
 
     def check(self, mirror=True):
         if self.use_camera: # Capture video from camera
-            cap = cv2.VideoCapture(0 + cv2.CAP_DSHOW)
+            cap = cv2.VideoCapture(0)
         else: # Capture video from an existing movie
             cap = cv2.VideoCapture(self.media_path)
             mirror = False
@@ -104,6 +102,6 @@ class denseChecker(object):
         return (out * 255).astype(np.uint8)
 
 if __name__ == '__main__':
-    #checker = denseChecker(use_camera=False, media_path='data/shinjuku1.mp4')
-    checker = denseChecker()
+    checker = denseChecker(use_camera=False, media_path='data/shinjuku1.mp4')
+    #checker = denseChecker()
     checker.check()
