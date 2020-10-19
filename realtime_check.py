@@ -8,7 +8,7 @@ import numpy as np
 import torch
 from torchvision import transforms
 
-from src.calc_fps import fpsCalculator
+from src.calc_fps import FPSCalculator
 from src.counter import Counter
 from src.particle_filter import ParicleFilter
 
@@ -23,7 +23,7 @@ class DenseChecker(object):
             self.media_path = media_path
 
         # fps calculator instance
-        self.fps = fpsCalculator()
+        self.fps = FPSCalculator()
 
         # Define Counter and Particle Filter
         self.counter = ctr

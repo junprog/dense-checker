@@ -5,7 +5,7 @@ import time, sys
 import queue
 import numpy as np
 
-class fpsCalculator(object):
+class FPSCalculator(object):
     def __init__(self, length=5):
         self.times = queue.LifoQueue()
         self.length = length

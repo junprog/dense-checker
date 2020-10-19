@@ -13,7 +13,7 @@ class ParicleFilter(object):
         self.system_noise = 20
     
     def initialize(self, img):
-        self.img_h, self.img_w, intensity = img.shape
+        self.img_h, self.img_w, _ = img.shape
         # generate random particles
         self.particles[0,:] = np.random.randint(0, self.img_w, (1,self.particles_num))
         self.particles[1,:] = np.random.randint(0, self.img_h, (1,self.particles_num))
