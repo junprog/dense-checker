@@ -1,6 +1,7 @@
 import os
 import time
-
+import sys
+sys.path.remove('/opt/ros/kinetic/lib/python2.7/dist-packages')
 import cv2
 import numpy as np
 from PIL import Image
@@ -35,7 +36,7 @@ class denseChecker(object):
 
     def check(self, mirror=True):
         if self.use_camera: # Capture video from camera
-            cap = cv2.VideoCapture(0 + cv2.CAP_DSHOW)
+            cap = cv2.VideoCapture(0)
         else: # Capture video from an existing movie
             cap = cv2.VideoCapture(self.media_path)
             mirror = False
