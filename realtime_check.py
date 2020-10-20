@@ -12,8 +12,6 @@ from src.calc_fps import FPSCalculator
 from src.counter import Counter
 from src.particle_filter import ParicleFilter
 
-from models.vgg import vgg19
-
 class DenseChecker(object):
     def __init__(self, ctr, pf, use_camera=True, media_path=None):
         self.use_camera = use_camera
@@ -51,7 +49,7 @@ class DenseChecker(object):
             # BGR(cv2) -> RGB(numpy)
             img = self._cvimg2np(frame)
 
-            # regress density map from image
+            # regress a density map and counts from image
             dm, count = self.counter.regression(img)
             out = cv2.resize(dm, dsize=(int(dm.shape[1]*8), int(dm.shape[0]*8)))
 
@@ -96,7 +94,7 @@ class DenseChecker(object):
         return (out * 255).astype(np.uint8)
 
 if __name__ == '__main__':
-    counter = Counter()
+    counter = Counter(model='mobilenet', model_path='data/ucf_mobile_best_model.pth')
     particlefilter = ParicleFilter(1000)
 
     #checker = DenseChecker(counter, particlefilter, use_camera=False, media_path='data/shinjuku1.mp4')
