@@ -2,6 +2,8 @@ import os
 import time
 import sys
 #sys.path.remove('/opt/ros/kinetic/lib/python2.7/dist-packages')
+import argparse
+
 import cv2
 import numpy as np
 
@@ -11,6 +13,21 @@ from torchvision import transforms
 from src.calc_fps import FPSCalculator
 from src.counter import Counter
 from src.particle_filter import ParicleFilter
+
+def parse_args():
+    parser = argparse.ArgumentParser(description='Dense Check Parameters')
+    
+    parser.add_argument('--model', default='vgg', help='set the model architecture')
+    parser.add_argument('--data-dir', default='data', help='set the directory where weights and movies put')
+    parser.add_argument('--weight-path', default='ucf_vgg_best_model.pth', help='set the model architecture')
+
+    parser.add_argument('--particle-num', default=1000, help='set the number of particle')
+
+    parser.add_argument('--use-movie', action='store_false', help='if use an existing movie, set this option')
+    parser.add_argument('--media-path', default='shinjuku1.mp4', help='if use an existing movie, set the file name of movie')
+    
+    args = parser.parse_args()
+    return args
 
 class DenseChecker(object):
     def __init__(self, ctr, pf, use_camera=True, media_path=None):
@@ -27,9 +44,10 @@ class DenseChecker(object):
         self.counter = ctr
         self.particle_filter = pf
 
-    def check(self, mirror=True):
+    def check(self):
         if self.use_camera: # Capture video from camera
             cap = cv2.VideoCapture(0)
+            mirror=True
         else: # Capture video from an existing movie
             cap = cv2.VideoCapture(self.media_path)
             mirror = False
@@ -37,14 +55,14 @@ class DenseChecker(object):
         while True:
             _, frame = cap.read()
 
-            self.particle_filter.initialize(frame)
-
             # flip
             if mirror is True:
                 frame = frame[:,::-1]
 
-            if max(frame.shape) > 1300:
-                frame = cv2.resize(frame, dsize=(int(frame.shape[1]*0.5), int(frame.shape[0]*0.5)))
+            #if max(frame.shape) > 1300:
+            #    frame = cv2.resize(frame, dsize=(int(frame.shape[1]*0.5), int(frame.shape[0]*0.5)))
+
+            self.particle_filter.initialize(frame)
 
             # BGR(cv2) -> RGB(numpy)
             img = self._cvimg2np(frame)
@@ -94,10 +112,10 @@ class DenseChecker(object):
         return (out * 255).astype(np.uint8)
 
 if __name__ == '__main__':
-    counter = Counter(model='mobilenet', model_path='data/ucf_mobile_best_model.pth')
-    particlefilter = ParicleFilter(1000)
+    args = parse_args()
 
-    #checker = DenseChecker(counter, particlefilter, use_camera=False, media_path='data/shinjuku1.mp4')
-    checker = DenseChecker(counter, particlefilter)
+    counter = Counter(model=args.model, model_path=os.path.join(args.data_dir, args.weight_path))
+    particlefilter = ParicleFilter(args.particle_num)
 
+    checker = DenseChecker(counter, particlefilter, use_camera=args.use_movie, media_path=os.path.join(args.data_dir, args.media_path))
     checker.check()
