@@ -1,7 +1,7 @@
 import os
 import time
 import sys
-#sys.path.remove('/opt/ros/kinetic/lib/python2.7/dist-packages')
+sys.path.remove('/opt/ros/kinetic/lib/python2.7/dist-packages')
 import argparse
 
 import cv2
@@ -71,8 +71,12 @@ class DenseChecker(object):
             dm, count = self.counter.regression(img)
             out = cv2.resize(dm, dsize=(int(dm.shape[1]*8), int(dm.shape[0]*8)))
 
+            # pick out coordinates of human centroid from dense map
+            idx = np.unravel_index(np.argmax(out), out.shape)
+            human_coords = idx[1], idx[0]
+
             # apply particle filter
-            x, y = self.particle_filter.filtering(out)
+            x, y = self.particle_filter.filtering(out,human_coords)
 
             # calculate FPS
             self.fps.tick_tack()
