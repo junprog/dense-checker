@@ -52,6 +52,9 @@ class DenseChecker(object):
             cap = cv2.VideoCapture(self.media_path)
             mirror = False
 
+        _, frame = cap.read()
+        self.particle_filter.initialize(frame)
+
         while True:
             _, frame = cap.read()
 
@@ -62,7 +65,7 @@ class DenseChecker(object):
             #if max(frame.shape) > 1300:
             #    frame = cv2.resize(frame, dsize=(int(frame.shape[1]*0.5), int(frame.shape[0]*0.5)))
 
-            self.particle_filter.initialize(frame)
+            #self.particle_filter.initialize(frame)
 
             # BGR(cv2) -> RGB(numpy)
             img = self._cvimg2np(frame)
