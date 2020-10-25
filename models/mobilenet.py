@@ -23,6 +23,6 @@ class MobileNet(nn.Module):
         x = self.reg_layer(x)
         return torch.abs(x)
 
-def make_mobilenet_v2():
+def mobilenet_v2():
     model = MobileNet(models.mobilenet_v2(pretrained=True).features)
     return model

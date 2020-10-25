@@ -1,39 +1,53 @@
 import os
 import time
 import sys
-#sys.path.remove('/opt/ros/kinetic/lib/python2.7/dist-packages')
+sys.path.remove('/opt/ros/kinetic/lib/python2.7/dist-packages')
+import argparse
+
 import cv2
 import numpy as np
 
 import torch
 from torchvision import transforms
 
-from calc_fps import fpsCalculator
-from models.vgg import vgg19
+from src.calc_fps import FPSCalculator
+from src.counter import Counter
+from src.particle_filter import ParicleFilter
 
-class denseChecker(object):
-    def __init__(self, use_camera=True, media_path=None, model_path='data/ucf_best_model.pth'):
+def parse_args():
+    parser = argparse.ArgumentParser(description='Dense Check Parameters')
+    
+    parser.add_argument('--model', default='vgg', help='set the model architecture')
+    parser.add_argument('--data-dir', default='data', help='set the directory where weights and movies put')
+    parser.add_argument('--weight-path', default='ucf_vgg_best_model.pth', help='set the model architecture')
+
+    parser.add_argument('--particle-num', default=1000, help='set the number of particle')
+
+    parser.add_argument('--use-movie', action='store_false', help='if use an existing movie, set this option')
+    parser.add_argument('--media-path', default='shinjuku1.mp4', help='if use an existing movie, set the file name of movie')
+    
+    args = parser.parse_args()
+    return args
+
+class DenseChecker(object):
+    def __init__(self, ctr, pf, use_camera=True, media_path=None):
         self.use_camera = use_camera
 
         if self.use_camera == False:
             assert media_path is not None, "If use an existing movie, you specify the movie's path : modea_path"
             self.media_path = media_path
-        
-        self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-
-        self.trans = transforms.Compose([transforms.ToTensor(), transforms.Normalize(mean=[0.485, 0.456, 0.406],std=[0.229, 0.224, 0.225])])
-        self.model = vgg19()
-        # load pre-trained model
-        self.model.load_state_dict(torch.load(model_path, self.device))
-        # model to GPU or CPU
-        self.model.to(self.device)
 
         # fps calculator instance
-        self.fps = fpsCalculator()
+        self.fps = FPSCalculator()
 
-    def check(self, mirror=True):
+        # Define Counter and Particle Filter
+        self.counter = ctr
+        self.particle_filter = pf
+
+    def check(self):
         if self.use_camera: # Capture video from camera
             cap = cv2.VideoCapture(0)
+            mirror=True
         else: # Capture video from an existing movie
             cap = cv2.VideoCapture(self.media_path)
             mirror = False
@@ -45,24 +59,36 @@ class denseChecker(object):
             if mirror is True:
                 frame = frame[:,::-1]
 
-            if max(frame.shape) > 1300:
-                frame = cv2.resize(frame, dsize=(int(frame.shape[1]*0.5), int(frame.shape[0]*0.5)))
+            #if max(frame.shape) > 1300:
+            #    frame = cv2.resize(frame, dsize=(int(frame.shape[1]*0.5), int(frame.shape[0]*0.5)))
+
+            self.particle_filter.initialize(frame)
 
             # BGR(cv2) -> RGB(numpy)
             img = self._cvimg2np(frame)
 
-            # regress density map from image
-            out = self._regression(img)
+            # regress a density map and counts from image
+            dm, count = self.counter.regression(img)
+            out = cv2.resize(dm, dsize=(int(dm.shape[1]*8), int(dm.shape[0]*8)))
 
-            # count
-            num = int(round(out.sum()))
-            out = cv2.resize(out, dsize=(int(out.shape[1]*8), int(out.shape[0]*8)))
+            # pick out coordinates of human centroid from dense map
+            idx = np.unravel_index(np.argmax(out), out.shape)
+            human_coords = idx[1], idx[0]
 
+            # apply particle filter
+            x, y = self.particle_filter.filtering(out,human_coords)
+
+            # calculate FPS
             self.fps.tick_tack()
 
             # plot
             out = cv2.applyColorMap(self._norm_uint8(out), cv2.COLORMAP_JET)
-            cv2.putText(out, "FPS : {:.3f}   Poeple Count : {}".format(self.fps.getFPS(), num), (20, 50), cv2.FONT_HERSHEY_PLAIN, 2, (255, 255, 255), 2, cv2.LINE_AA)
+
+            out = cv2.circle(out, (int(x), int(y)), 10, (255, 255, 255), -1)
+            for i in range(self.particle_filter.particles_num):
+                out = cv2.circle(out, (int(self.particle_filter.particles[0,i]),int(self.particle_filter.particles[1,i])), 2, (255, 255, 255), -1)
+
+            cv2.putText(out, "FPS : {:.3f}   Poeple Count : {}".format(self.fps.getFPS(), count), (20, 50), cv2.FONT_HERSHEY_PLAIN, 2, (255, 255, 255), 2, cv2.LINE_AA)
 
             cv2.imshow('camera capture', cv2.resize(frame, dsize=(int(frame.shape[1]*1), int(frame.shape[0]*1))))
             cv2.imshow('output', out)
@@ -81,18 +107,6 @@ class denseChecker(object):
         out[:,:,2] = img[:,:,0]
 
         return out
-
-    def _regression(self, img):
-        self.model.eval()
-        with torch.no_grad():
-            img = self.trans(img).unsqueeze_(0)
-            img = img.to(self.device)
-            out = self.model(img)
-
-        out = out.to('cpu').detach().numpy().copy()
-        out = np.squeeze(out)
-
-        return out
     
     def _norm_uint8(self, img, axis=None): 
         Min = img.min(axis=axis, keepdims=True)
@@ -102,6 +116,10 @@ class denseChecker(object):
         return (out * 255).astype(np.uint8)
 
 if __name__ == '__main__':
-    checker = denseChecker(use_camera=False, media_path='data/shinjuku1.mp4')
-    #checker = denseChecker()
+    args = parse_args()
+
+    counter = Counter(model=args.model, model_path=os.path.join(args.data_dir, args.weight_path))
+    particlefilter = ParicleFilter(args.particle_num)
+
+    checker = DenseChecker(counter, particlefilter, use_camera=args.use_movie, media_path=os.path.join(args.data_dir, args.media_path))
     checker.check()
