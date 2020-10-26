@@ -10,7 +10,7 @@ class ParicleFilter(object):
         self.particles_num = particles_num
         self.particles = np.empty([2, self.particles_num]) #x, y
         self.measure_noise = 20
-        self.system_noise_x = 3
+        self.system_noise_x = 2
         self.system_noise_y = 2
         self.ref_x = 0
         self.ref_y = 0
