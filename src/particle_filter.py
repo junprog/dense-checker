@@ -5,24 +5,24 @@ import numpy as np
 
 class ParicleFilter(object):
     def __init__(self, particles_num):
-        self.img_w = 0
-        self.img_h = 0
+        self.img_w = 640
+        self.img_h = 480
         self.particles_num = particles_num
         self.particles = np.empty([2, self.particles_num]) #x, y
-        self.measure_noise = 5
-        self.system_noise = 5
+        self.measure_noise = 20
+        self.system_noise_x = 3
+        self.system_noise_y = 2
         self.ref_x = 0
         self.ref_y = 0
     
-    def initialize(self, img):
-        self.img_h, self.img_w, _ = img.shape
+    def initialize(self):
         # generate random particles
         self.particles[0,:] = np.random.randint(0, self.img_w, (1,self.particles_num))
         self.particles[1,:] = np.random.randint(0, self.img_h, (1,self.particles_num))
 
     def predict(self):
-        self.particles[0, :] += np.random.random(self.particles_num) * self.system_noise
-        self.particles[1, :] += np.random.random(self.particles_num) * self.system_noise
+        self.particles[0, :] += np.random.randint(0, self.system_noise_x, (self.particles_num)) 
+        self.particles[1, :] += np.random.randint(0, self.system_noise_y, (self.particles_num)) 
     
     def normalize(self, weight):
         return weight / np.sum(weight)
@@ -54,7 +54,7 @@ class ParicleFilter(object):
             else:
                 dif_xy.append(-1)
 
-        weights = 1.0 / np.sqrt(2 * np.pi * std) * np.exp(-(np.array(dif_xy))**2 /(2 * std**2))
+        weights = 1.0 / np.sqrt(2 * np.pi * std) * np.exp(-(np.array(dif_xy))**2 /(2 * std))
         weights[dif_xy == -1] = 0
         weights = self.normalize(weights)
         return weights

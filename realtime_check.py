@@ -52,9 +52,7 @@ class DenseChecker(object):
             cap = cv2.VideoCapture(self.media_path)
             mirror = False
 
-        _, frame = cap.read()
-        self.particle_filter.initialize(frame)
-
+        self.particle_filter.initialize()
         while True:
             _, frame = cap.read()
 
@@ -64,8 +62,6 @@ class DenseChecker(object):
 
             #if max(frame.shape) > 1300:
             #    frame = cv2.resize(frame, dsize=(int(frame.shape[1]*0.5), int(frame.shape[0]*0.5)))
-
-            #self.particle_filter.initialize(frame)
 
             # BGR(cv2) -> RGB(numpy)
             img = self._cvimg2np(frame)
@@ -77,7 +73,7 @@ class DenseChecker(object):
             # pick out coordinates of human centroid from dense map
             idx = np.unravel_index(np.argmax(out), out.shape)
             human_coords = idx[1], idx[0]
-
+            print("human_coords: ", idx[1], idx[0])
             # apply particle filter
             x, y = self.particle_filter.filtering(out,human_coords)
 
@@ -88,10 +84,11 @@ class DenseChecker(object):
             out = cv2.applyColorMap(self._norm_uint8(out), cv2.COLORMAP_JET)
 
             out = cv2.circle(out, (int(x), int(y)), 10, (255, 255, 255), -1)
+            print("particle: ", int(x), int(y))
             for i in range(self.particle_filter.particles_num):
                 out = cv2.circle(out, (int(self.particle_filter.particles[0,i]),int(self.particle_filter.particles[1,i])), 2, (255, 255, 255), -1)
 
-            cv2.putText(out, "FPS : {:.3f}   Poeple Count : {}".format(self.fps.getFPS(), count), (20, 50), cv2.FONT_HERSHEY_PLAIN, 2, (255, 255, 255), 2, cv2.LINE_AA)
+            # cv2.putText(out, "FPS : {:.3f}   People Count : {}".format(self.fps.getFPS(), count), (20, 50), cv2.FONT_HERSHEY_PLAIN, 2, (255, 255, 255), 2, cv2.LINE_AA)
 
             cv2.imshow('camera capture', cv2.resize(frame, dsize=(int(frame.shape[1]*1), int(frame.shape[0]*1))))
             cv2.imshow('output', out)
@@ -120,6 +117,7 @@ class DenseChecker(object):
 
 if __name__ == '__main__':
     args = parse_args()
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     counter = Counter(model=args.model, model_path=os.path.join(args.data_dir, args.weight_path))
     particlefilter = ParicleFilter(args.particle_num)
