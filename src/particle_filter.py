@@ -70,7 +70,6 @@ class ParicleFilter(object):
         return sample
 
     def filtering(self, img, human_coords):
-
         self.ref_x, self.ref_y = human_coords[0], human_coords[1]
         self.predict()
         # weights = self.calcLikelihood4TrackingWhite(img)
