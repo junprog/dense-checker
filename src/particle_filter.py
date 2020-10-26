@@ -21,8 +21,8 @@ class ParicleFilter(object):
         self.particles[1,:] = np.random.randint(0, self.img_h, (1,self.particles_num))
 
     def predict(self):
-        self.particles[0, :] += np.random.randint(0, self.system_noise_x, (self.particles_num)) 
-        self.particles[1, :] += np.random.randint(0, self.system_noise_y, (self.particles_num)) 
+        self.particles[0, :] += np.random.randint(-(self.system_noise_x/2), (self.system_noise_x+2)/2, (self.particles_num)) 
+        self.particles[1, :] += np.random.randint(-(self.system_noise_y/2), (self.system_noise_y+2)/2, (self.particles_num)) 
     
     def normalize(self, weight):
         return weight / np.sum(weight)
