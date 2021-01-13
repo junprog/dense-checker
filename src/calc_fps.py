@@ -20,8 +20,6 @@ class FPSCalculator(object):
             end = time.time()
             self.times.put(end)
             fps = self.length / (end - begin)
-            #sys.stdout.write("\r FPS: %2.2f " % fps)
-            #sys.stdout.flush()
 
             self.fpsHist.append(fps)
 
