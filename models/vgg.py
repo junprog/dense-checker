@@ -52,5 +52,5 @@ def vgg19():
         model pre-trained on ImageNet
     """
     model = VGG(make_layers(cfg['E']))
-    model.load_state_dict(model_zoo.load_url(model_urls['vgg19']), strict=False)
+    #model.load_state_dict(model_zoo.load_url(model_urls['vgg19']), strict=False)
     return model

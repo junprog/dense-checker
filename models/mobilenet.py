@@ -19,10 +19,10 @@ class MobileNet(nn.Module):
 
     def forward(self, x):
         x = self.features(x)
-        x = F.upsample_bilinear(x, scale_factor=4)
+        x = F.interpolate(x, scale_factor=4, mode='bilinear', align_corners=False)
         x = self.reg_layer(x)
         return torch.abs(x)
 
 def mobilenet_v2():
-    model = MobileNet(models.mobilenet_v2(pretrained=True).features)
+    model = MobileNet(models.mobilenet_v2(pretrained=False).features)
     return model
