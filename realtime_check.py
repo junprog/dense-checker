@@ -8,7 +8,6 @@ import cv2
 import numpy as np
 
 import torch
-from torchvision import transforms
 
 from src.calc_fps import FPSCalculator
 from src.counter import Counter
@@ -78,9 +77,11 @@ class DenseChecker(object):
             # plot
             out = cv2.applyColorMap(self._norm_uint8(out), cv2.COLORMAP_JET)
 
+            frame = cv2.resize(frame, dsize=(int(frame.shape[1]*1), int(frame.shape[0]*1)))
+            out = cv2.addWeighted(frame, 0.7, out, 0.3, 0)
             cv2.putText(out, "FPS : {:.3f}   People Count : {}".format(self.fps.getFPS(), count), (20, 30), cv2.FONT_HERSHEY_PLAIN, 1, (255, 255, 255), 1, cv2.LINE_AA)
-
-            cv2.imshow('camera capture', cv2.resize(frame, dsize=(int(frame.shape[1]*1), int(frame.shape[0]*1))))
+            
+            #cv2.imshow('camera capture', cv2.resize(frame, dsize=(int(frame.shape[1]*1), int(frame.shape[0]*1))))
             cv2.imshow('output', out)
 
             sys.stdout.write("\r FPS: {:.3f}".format(self.fps.getFPS()))
