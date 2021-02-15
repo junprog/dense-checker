@@ -30,7 +30,7 @@ def parse_args():
     return args
 
 class DenseChecker(object):
-    def __init__(self, ctr, pf, use_camera=True, media_path=None):
+    def __init__(self, ctr, use_camera=True, media_path=None):
         self.use_camera = use_camera
 
         if self.use_camera == False:
@@ -40,9 +40,8 @@ class DenseChecker(object):
         # fps calculator instance
         self.fps = FPSCalculator()
 
-        # Define Counter and Particle Filter
+        # Define Counter
         self.counter = ctr
-        self.particle_filter = pf
 
     def check(self):
         if self.use_camera: # Capture video from camera
@@ -52,7 +51,6 @@ class DenseChecker(object):
             cap = cv2.VideoCapture(self.media_path)
             mirror = False
 
-        self.particle_filter.initialize()
         while True:
             _, frame = cap.read()
 
@@ -60,8 +58,8 @@ class DenseChecker(object):
             if mirror is True:
                 frame = frame[:,::-1]
 
-            #if max(frame.shape) > 1300:
-            #    frame = cv2.resize(frame, dsize=(int(frame.shape[1]*0.5), int(frame.shape[0]*0.5)))
+            if max(frame.shape) > 1300:
+                frame = cv2.resize(frame, dsize=(int(frame.shape[1]*0.5), int(frame.shape[0]*0.5)))
 
             # BGR(cv2) -> RGB(numpy)
             img = self._cvimg2np(frame)
@@ -73,9 +71,6 @@ class DenseChecker(object):
             # pick out coordinates of human centroid from dense map
             idx = np.unravel_index(np.argmax(out), out.shape)
             human_coords = idx[1], idx[0]
-            #print("human_coords: ", idx[1], idx[0])
-            # apply particle filter
-            x, y = self.particle_filter.filtering(out,human_coords)
 
             # calculate FPS
             self.fps.tick_tack()
@@ -83,22 +78,18 @@ class DenseChecker(object):
             # plot
             out = cv2.applyColorMap(self._norm_uint8(out), cv2.COLORMAP_JET)
 
-            out = cv2.circle(out, (int(x), int(y)), 10, (255, 255, 255), -1)
-            #print("particle: ", int(x), int(y))
-            for i in range(self.particle_filter.particles_num):
-                out = cv2.circle(out, (int(self.particle_filter.particles[0,i]),int(self.particle_filter.particles[1,i])), 2, (255, 255, 255), -1)
-
             cv2.putText(out, "FPS : {:.3f}   People Count : {}".format(self.fps.getFPS(), count), (20, 30), cv2.FONT_HERSHEY_PLAIN, 1, (255, 255, 255), 1, cv2.LINE_AA)
-            cv2.putText(out, "Heads: {} Pred: ({},{}) ".format(human_coords, int(x), int(y)), (20, 60), cv2.FONT_HERSHEY_PLAIN, 1, (255, 255, 255), 1, cv2.LINE_AA)
 
             cv2.imshow('camera capture', cv2.resize(frame, dsize=(int(frame.shape[1]*1), int(frame.shape[0]*1))))
             cv2.imshow('output', out)
 
-            sys.stdout.write("\r FPS: {:.3f} human_coords: {} particle: ({},{}) ".format(self.fps.getFPS(), human_coords, int(x), int(y)))
+            sys.stdout.write("\r FPS: {:.3f}".format(self.fps.getFPS()))
             sys.stdout.flush()
 
             k = cv2.waitKey(1) # wait 1 [msec]
             if k == 27: # exit press : [Esc]
+                sys.stdout.write("\n")
+                sys.stdout.flush()
                 break
 
         cap.release()
@@ -124,7 +115,6 @@ if __name__ == '__main__':
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     counter = Counter(model=args.model, model_path=os.path.join(args.data_dir, args.weight_path))
-    particlefilter = ParicleFilter(args.particle_num)
 
-    checker = DenseChecker(counter, particlefilter, use_camera=args.use_movie, media_path=os.path.join(args.data_dir, args.media_path))
+    checker = DenseChecker(counter, use_camera=args.use_movie, media_path=os.path.join(args.data_dir, args.media_path))
     checker.check()

@@ -19,12 +19,13 @@ class Counter(object):
         # model to GPU or CPU
         self.model.to(self.device)
 
+    @torch.no_grad()
     def regression(self, img):
         self.model.eval()
-        with torch.no_grad():
-            img = self.trans(img).unsqueeze_(0)
-            img = img.to(self.device)
-            out = self.model(img)
+
+        img = self.trans(img).unsqueeze_(0)
+        img = img.to(self.device).detach()
+        out = self.model(img)
 
         out = out.to('cpu').detach().numpy().copy()
         dense_map = np.squeeze(out)
