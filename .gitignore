@@ -130,4 +130,5 @@ dmypy.json
 
 # addition
 .vscode
-data/
+data/*.JPG
+data/*.jpg
