@@ -9,10 +9,6 @@ import numpy as np
 
 import torch
 
-from src.calc_fps import FPSCalculator
-from src.counter import Counter
-from src.particle_filter import ParicleFilter
-
 def parse_args():
     parser = argparse.ArgumentParser(description='Dense Check Parameters')
     
@@ -28,33 +24,73 @@ def parse_args():
     args = parser.parse_args()
     return args
 
-class DenseChecker(object):
-    def __init__(self, ctr, use_camera=True, media_path=None):
+class VideoDenseChecker(object):
+    def __init__(self, ctr, fps ,use_camera=True, media_path=None):
         self.use_camera = use_camera
 
-        if self.use_camera == False:
+        if self.use_camera: # Capture video from camera
+            self.video = cv2.VideoCapture(0)
+            self.mirror = True
+
+        else: # Capture video from an existing movie
             assert media_path is not None, "If use an existing movie, you specify the movie's path : modea_path"
             self.media_path = media_path
+            self.video = cv2.VideoCapture(self.media_path)
+            self.mirror = False
 
         # fps calculator instance
-        self.fps = FPSCalculator()
+        self.fps = fps
 
         # Define Counter
         self.counter = ctr
 
-    def check(self):
-        if self.use_camera: # Capture video from camera
-            cap = cv2.VideoCapture(0)
-            mirror=True
-        else: # Capture video from an existing movie
-            cap = cv2.VideoCapture(self.media_path)
-            mirror = False
+    def __del__(self):
+        self.video.release()
 
+    def get_frame(self):
+        _, frame = self.video.read()
+        
+        # flip
+        if self.mirror is True:
+            frame = frame[:,::-1]
+
+        if max(frame.shape) > 1300:
+            frame = cv2.resize(frame, dsize=(int(frame.shape[1]*0.5), int(frame.shape[0]*0.5)))
+
+        # BGR(cv2) -> RGB(numpy)
+        img = self._cvimg2np(frame)
+
+        # regress a density map and counts from image
+        dm, count = self.counter.regression(img)
+        out = cv2.resize(dm, dsize=(int(dm.shape[1]*8), int(dm.shape[0]*8)))
+
+        # pick out coordinates of human centroid from dense map
+        idx = np.unravel_index(np.argmax(out), out.shape)
+        human_coords = idx[1], idx[0]
+
+        # calculate FPS
+        self.fps.tick_tack()
+
+        # plot
+        out = cv2.applyColorMap(self._norm_uint8(out), cv2.COLORMAP_JET)
+
+        frame = cv2.resize(frame, dsize=(int(frame.shape[1]*1), int(frame.shape[0]*1)))
+        out = cv2.addWeighted(frame, 0.7, out, 0.3, 0)
+        cv2.putText(out, "FPS : {:.3f}   People Count : {}".format(self.fps.getFPS(), count), (20, 30), cv2.FONT_HERSHEY_PLAIN, 1, (255, 255, 255), 1, cv2.LINE_AA)
+
+        sys.stdout.write("\r FPS: {:.3f}".format(self.fps.getFPS()))
+        sys.stdout.flush()
+
+        _, frame = cv2.imencode('.jpg', out)
+
+        return frame
+
+    def check(self):
         while True:
-            _, frame = cap.read()
+            _, frame = self.video.read()
 
             # flip
-            if mirror is True:
+            if self.mirror is True:
                 frame = frame[:,::-1]
 
             if max(frame.shape) > 1300:
@@ -93,7 +129,7 @@ class DenseChecker(object):
                 sys.stdout.flush()
                 break
 
-        cap.release()
+        self.video.release()
         cv2.destroyAllWindows()
 
     def _cvimg2np(self, img):
@@ -117,5 +153,5 @@ if __name__ == '__main__':
 
     counter = Counter(model=args.model, model_path=os.path.join(args.data_dir, args.weight_path))
 
-    checker = DenseChecker(counter, use_camera=args.use_movie, media_path=os.path.join(args.data_dir, args.media_path))
+    checker = VideoDenseChecker(counter, use_camera=args.use_movie, media_path=os.path.join(args.data_dir, args.media_path))
     checker.check()

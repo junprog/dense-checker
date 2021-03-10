@@ -9,8 +9,8 @@ import numpy as np
 
 import torch
 
-from src.counter import Counter
-from src.particle_filter import ParicleFilter
+from counter import Counter
+from particle_filter import ParicleFilter
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Dense Check Parameters')
@@ -24,7 +24,7 @@ def parse_args():
     args = parser.parse_args()
     return args
 
-class DenseChecker(object):
+class PicDenseChecker(object):
     def __init__(self, ctr, media_path=None):
         self.media_path = media_path
 
@@ -71,5 +71,5 @@ if __name__ == '__main__':
 
     counter = Counter(model=args.model, model_path=os.path.join(args.data_dir, args.weight_path))
 
-    checker = DenseChecker(counter, media_path=os.path.join(args.data_dir, args.media_path))
+    checker = PicDenseChecker(counter, media_path=os.path.join(args.data_dir, args.media_path))
     checker.check()
