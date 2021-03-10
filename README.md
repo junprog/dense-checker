@@ -34,5 +34,5 @@ And open `localhost:8000` on web browser.
 
 ```bash
 sudo docker build -t dense-check .
-sudo docker run -it --name test --runtime nvidia --network host -t dense-check bash
+sudo docker run -it --name test --runtime nvidia --network host -t dense-check
 ```
