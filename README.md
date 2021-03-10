@@ -29,3 +29,10 @@ $ python app.py
 ```
 
 And open `localhost:8000` on web browser. 
+
+## Docker
+
+```bash
+sudo docker build -t dense-check .
+sudo docker run -it --name test --runtime nvidia --network host -t dense-check bash
+```
