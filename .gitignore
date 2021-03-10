@@ -127,3 +127,8 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# addition
+.vscode
+data/*.JPG
+data/*.jpg
