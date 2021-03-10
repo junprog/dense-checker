@@ -29,11 +29,7 @@ args = parse_args()
 
 @app.route("/")
 def index():
-    return "Hello World!"
-
-@app.route("/stream")
-def stream():
-    return render_template("stream.html")
+    return render_template("index.html")    
 
 def gen(checker):
     while True:
@@ -52,7 +48,6 @@ def video_feed():
 
     return Response(gen(checker),
             mimetype="multipart/x-mixed-replace; boundary=frame")
-
 
 if __name__ == "__main__":
     app.debug = True
