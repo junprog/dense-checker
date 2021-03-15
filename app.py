@@ -15,8 +15,6 @@ def parse_args():
     parser.add_argument('--data-dir', default='src/data', type=str, help='set the directory where weights and movies put')
     parser.add_argument('--weight-path', default='ucf_vgg_best_model.pth', type=str, help='set the model architecture')
 
-    parser.add_argument('--particle-num', default=1000, type=int, help='set the number of particle')
-
     parser.add_argument('--use-movie', action='store_false', help='if use an existing movie, set this option')
     parser.add_argument('--media-path', default='shinjuku1.mp4', type=str, help='if use an existing movie, set the file name of movie')
     
