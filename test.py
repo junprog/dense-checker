@@ -7,6 +7,9 @@ def capture_camera(mirror=True, size=None):
     while True:
         # retは画像を取得成功フラグ
         ret, frame = cap.read()
+        if ret is False:
+            print('False')
+            break
 
         # 鏡のように映るか否か
         if mirror is True:
