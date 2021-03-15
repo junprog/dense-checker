@@ -11,9 +11,29 @@ This project will help to avoid the close or dense situation between people with
 
 * Progress Management : [Google Spread Sheets](https://docs.google.com/spreadsheets/d/1siRg7qTlEc6rQirJbn1OY48E0qZ5ZRyTXaP1s8RAq74/edit?usp=sharing)
 
+## Requirements
+
+* torch
+* torchvision
+* numpy
+* python-opencv
+* flask
+
 ## Demo (current status)
 
-Checking the dense situation
+Run this script.
 ```bash
-$ python realtime_check.py
+$ python app.py
 ```
+
+And open `localhost:8000` on web browser. 
+
+## Docker (Only Jetson Support)
+
+Run this script.
+```bash
+sudo docker build -t dense-check .
+sudo docker run -it --name test --runtime nvidia --network host -t dense-check
+```
+
+And open `localhost:8000` on web browser. 
