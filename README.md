@@ -11,7 +11,9 @@ This project will help to avoid the close or dense situation between people with
 
 * Progress Management : [Google Spread Sheets](https://docs.google.com/spreadsheets/d/1siRg7qTlEc6rQirJbn1OY48E0qZ5ZRyTXaP1s8RAq74/edit?usp=sharing)
 
-## Requirements
+## Demo (Current status)
+
+### Requirements
 
 * torch
 * torchvision
@@ -19,9 +21,7 @@ This project will help to avoid the close or dense situation between people with
 * python-opencv
 * flask
 
-## Demo (current status)
-
-Run this script.
+### Run this script.
 ```bash
 $ python app.py
 ```
@@ -30,7 +30,7 @@ And open `localhost:8000` on web browser.
 
 ## Docker (Only Jetson Support)
 
-Run this script.
+### Run this script.
 ```bash
 sudo docker build -t dense-check .
 sudo docker run --device /dev/video0:/dev/video0:mwr -it --name test --runtime nvidia --network host -t dense-check
