@@ -68,8 +68,8 @@ class DenseChecker(object):
             out = cv2.resize(dm, dsize=(int(dm.shape[1]*8), int(dm.shape[0]*8)))
 
             # pick out coordinates of human centroid from dense map
-            idx = np.unravel_index(np.argmax(out), out.shape)
-            human_coords = idx[1], idx[0]
+            #idx = np.unravel_index(np.argmax(out), out.shape)
+            #human_coords = idx[1], idx[0]
 
             # calculate FPS
             self.fps.tick_tack()
