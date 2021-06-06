@@ -22,7 +22,7 @@ def parse_args():
     return args
 
 app = Flask(__name__)
-PORT = 8000
+PORT = 5000
 args = parse_args()
 
 @app.route("/")
@@ -49,4 +49,4 @@ def video_feed():
 
 if __name__ == "__main__":
     app.debug = True
-    app.run(host="0.0.0.0", port=PORT)
+    app.run(host="0.0.0.0", port=PORT, threaded=True)

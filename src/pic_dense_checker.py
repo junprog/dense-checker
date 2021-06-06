@@ -19,7 +19,7 @@ def parse_args():
     parser.add_argument('--data-dir', default='data', type=str, help='set the directory where weights and movies put')
 
     parser.add_argument('--weight-path', default='ucf_vgg_best_model.pth', type=str, help='set the pre-train weight file name')
-    parser.add_argument('--media-path', default='IMG_1884.JPG', type=str, help='if use an existing movie, set the file name')
+    parser.add_argument('--media-path', default='IMG_1.jpg', type=str, help='if use an existing movie, set the file name')
     
     args = parser.parse_args()
     return args
@@ -33,6 +33,7 @@ class PicDenseChecker(object):
 
     def check(self):
         cv2_img = cv2.imread(self.media_path)
+        #cv2_img = cv2.resize(cv2_img, dsize=(640, 512))
 
         # BGR(cv2) -> RGB(numpy)
         img = self._cvimg2np(cv2_img)
@@ -45,7 +46,7 @@ class PicDenseChecker(object):
         out = cv2.applyColorMap(self._norm_uint8(out), cv2.COLORMAP_JET)
 
         out = cv2.addWeighted(cv2_img, 0.5, out, 0.5, 0)
-        cv2.putText(out, "People Count : {}".format(count), (20, 100), cv2.FONT_HERSHEY_PLAIN, 8, (255, 255, 255), 4, cv2.LINE_AA)
+        cv2.putText(out, "People Count : {}".format(count), (20, 100), cv2.FONT_HERSHEY_PLAIN, 4, (255, 255, 255), 4, cv2.LINE_AA)
         
         cv2.imshow('output', out)
         cv2.imwrite(os.path.join('data', 'out.jpg'), out)
