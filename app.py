@@ -1,6 +1,5 @@
 import os
 
-import cv2
 import argparse
 from flask import Flask, render_template, Response
 
@@ -51,4 +50,4 @@ def video_feed():
 
 if __name__ == "__main__":
     app.debug = True
-    app.run(host="0.0.0.0", port=PORT)
+    app.run(host="0.0.0.0", port=PORT, threaded=True)
